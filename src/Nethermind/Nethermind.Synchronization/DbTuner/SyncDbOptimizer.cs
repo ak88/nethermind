@@ -14,10 +14,12 @@ public class SyncDbTuner
     private readonly IDb _stateDb;
     private readonly IDb _codeDb;
     private readonly IDb _blockDb;
-    private readonly IDb _receiptDb;
+    private readonly IDb _receiptBlocksDb;
+    private readonly IDb _receiptTxIndexDb;
 
     private ITunableDb.TuneType _tuneType;
     private ITunableDb.TuneType _blocksDbTuneType;
+    private ITunableDb.TuneType _receiptsBlocksDbTuneType;
 
     public SyncDbTuner(
         ISyncConfig syncConfig,
@@ -27,7 +29,8 @@ public class SyncDbTuner
         IDb stateDb,
         IDb codeDb,
         IDb blockDb,
-        IDb receiptDb
+        IDb receiptBlocksDb,
+        IDb receiptTxIndexDb
     )
     {
         // Only these three make sense as they are write heavy
@@ -51,10 +54,12 @@ public class SyncDbTuner
         _stateDb = stateDb;
         _codeDb = codeDb;
         _blockDb = blockDb;
-        _receiptDb = receiptDb;
+        _receiptBlocksDb = receiptBlocksDb;
+        _receiptTxIndexDb = receiptTxIndexDb;
 
         _tuneType = syncConfig.TuneDbMode;
         _blocksDbTuneType = syncConfig.BlocksDbTuneDbMode;
+        _receiptsBlocksDbTuneType = syncConfig.ReceiptsDbTuneDbMode;
     }
 
     private void SnapStateChanged(object? sender, SyncFeedStateEventArgs e)
@@ -105,16 +110,26 @@ public class SyncDbTuner
     {
         if (e.NewState == SyncFeedState.Active)
         {
-            if (_receiptDb is ITunableDb receiptDb)
+            // ReceiptBlocks column can enable blob files.
+            // But tx index should definitely not.
+            if (_receiptBlocksDb is ITunableDb receiptBlocksDb)
             {
-                receiptDb.Tune(_tuneType);
+                receiptBlocksDb.Tune(_receiptsBlocksDbTuneType);
+            }
+            if (_receiptTxIndexDb is ITunableDb receiptTxIndexDb)
+            {
+                receiptTxIndexDb.Tune(_tuneType);
             }
         }
         else if (e.NewState == SyncFeedState.Finished)
         {
-            if (_receiptDb is ITunableDb receiptDb)
+            if (_receiptBlocksDb is ITunableDb receiptBlocksDb)
             {
-                receiptDb.Tune(ITunableDb.TuneType.Default);
+                receiptBlocksDb.Tune(ITunableDb.TuneType.Default);
+            }
+            if (_receiptTxIndexDb is ITunableDb receiptTxIndexDb)
+            {
+                receiptTxIndexDb.Tune(ITunableDb.TuneType.Default);
             }
         }
     }

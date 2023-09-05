@@ -16,6 +16,7 @@ public class SyncDbTunerTests
 {
     private ITunableDb.TuneType _tuneType = ITunableDb.TuneType.HeavyWrite;
     private ITunableDb.TuneType _blocksTuneType = ITunableDb.TuneType.AggressiveHeavyWrite;
+    private ITunableDb.TuneType _receiptsBlocksTuneType = ITunableDb.TuneType.EnableBlobFiles;
     private SyncConfig _syncConfig = null!;
     private ISyncFeed<SnapSyncBatch>? _snapSyncFeed;
     private ISyncFeed<BodiesSyncBatch>? _bodiesSyncFeed;
@@ -23,7 +24,8 @@ public class SyncDbTunerTests
     private ITunableDb _stateDb = null!;
     private ITunableDb _codeDb = null!;
     private ITunableDb _blockDb = null!;
-    private ITunableDb _receiptDb = null!;
+    private ITunableDb _receiptBlockDb = null!;
+    private ITunableDb _receiptTxDb = null!;
     private SyncDbTuner _tuner = null!;
 
     [SetUp]
@@ -41,7 +43,8 @@ public class SyncDbTunerTests
         _stateDb = Substitute.For<ITunableDb>();
         _codeDb = Substitute.For<ITunableDb>();
         _blockDb = Substitute.For<ITunableDb>();
-        _receiptDb = Substitute.For<ITunableDb>();
+        _receiptBlockDb = Substitute.For<ITunableDb>();
+        _receiptTxDb = Substitute.For<ITunableDb>();
 
         _tuner = new SyncDbTuner(
             _syncConfig,
@@ -51,7 +54,8 @@ public class SyncDbTunerTests
             _stateDb,
             _codeDb,
             _blockDb,
-            _receiptDb);
+            _receiptBlockDb,
+            _receiptTxDb);
     }
 
     [Test]
@@ -75,7 +79,13 @@ public class SyncDbTunerTests
     [Test]
     public void WhenReceiptsIsOn_TriggerReceiptsDbTune()
     {
-        TestFeedAndDbTune(_receiptSyncFeed, _receiptDb);
+        TestFeedAndDbTune(_receiptSyncFeed, _receiptTxDb);
+    }
+
+    [Test]
+    public void WhenReceiptsIsOn_TriggerReceiptBlocksDbTune()
+    {
+        TestFeedAndDbTune(_receiptSyncFeed, _receiptBlockDb, _receiptsBlocksTuneType);
     }
 
     public void TestFeedAndDbTune<T>(ISyncFeed<T> feed, ITunableDb db, ITunableDb.TuneType? tuneType = null)

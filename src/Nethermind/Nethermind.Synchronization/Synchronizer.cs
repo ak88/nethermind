@@ -119,7 +119,9 @@ namespace Nethermind.Synchronization
                 StartStateSyncComponents();
             }
 
-            if (_syncConfig.TuneDbMode != ITunableDb.TuneType.Default || _syncConfig.BlocksDbTuneDbMode != ITunableDb.TuneType.Default)
+            if (_syncConfig.TuneDbMode != ITunableDb.TuneType.Default
+                || _syncConfig.BlocksDbTuneDbMode != ITunableDb.TuneType.Default
+                || _syncConfig.ReceiptsDbTuneDbMode != ITunableDb.TuneType.Default)
             {
                 SetupDbOptimizer();
             }
@@ -132,8 +134,17 @@ namespace Nethermind.Synchronization
 
         private void SetupDbOptimizer()
         {
-            new SyncDbTuner(_syncConfig, _snapSyncFeed, _bodiesFeed, _receiptsFeed, _dbProvider.StateDb, _dbProvider.CodeDb,
-                _dbProvider.BlocksDb, _dbProvider.ReceiptsDb);
+            new SyncDbTuner(
+                _syncConfig,
+                _snapSyncFeed,
+                _bodiesFeed,
+                _receiptsFeed,
+                _dbProvider.StateDb,
+                _dbProvider.CodeDb,
+                _dbProvider.BlocksDb,
+                _dbProvider.ReceiptsDb.GetColumnDb(ReceiptsColumns.Blocks),
+                _dbProvider.ReceiptsDb.GetColumnDb(ReceiptsColumns.Transactions)
+            );
         }
 
         private void StartFullSyncComponents()
