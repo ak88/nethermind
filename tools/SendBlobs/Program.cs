@@ -66,6 +66,9 @@ if (args.Length > 4)
 ulong feeMultiplier = 4;
 if (args.Length > 5) ulong.TryParse(args[5], out feeMultiplier);
 
+UInt256 maxPriorityFeePerGas = 1_000_000_000;
+if (args.Length > 6) UInt256.TryParse(args[6], out maxPriorityFeePerGas);
+
 await KzgPolynomialCommitments.InitializeAsync();
 
 PrivateKey privateKey = new(privateKeyString);
@@ -174,12 +177,12 @@ foreach ((int txCount, int blobCount, string @break) txs in blobTxCounts)
         }
 
         Transaction tx = new()
-        {
+        {            
             Type = TxType.Blob,
             ChainId = chainId,
             Nonce = nonce,
             GasLimit = GasCostOf.Transaction,
-            GasPrice = gasPrice * feeMultiplier,
+            GasPrice = maxPriorityFeePerGas,
             DecodedMaxFeePerGas = gasPrice * feeMultiplier,
             MaxFeePerDataGas = maxFeePerDataGas,
             Value = 0,
